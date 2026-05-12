@@ -24,3 +24,32 @@ export async function GET() {
     });
   }
 }
+
+// CREATE session
+export async function POST(req: NextRequest) {
+  try {
+    await connectDB();
+
+    const body = await req.json();
+
+    const session = await Session.create({
+      title: body.title || "New Chat",
+      messages: body.messages || [],
+    });
+
+    return NextResponse.json({
+      success: true,
+      session,
+    });
+  } catch (error) {
+    console.error("CREATE SESSION ERROR:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to create session",
+      },
+      { status: 500 },
+    );
+  }
+}

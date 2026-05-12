@@ -17,7 +17,8 @@ interface HistoryMessage {
 
 export async function POST(req: NextRequest) {
   try {
-    const ip = req.headers.get("x-forwarded-for") || "unknown";
+    const forwarded = req.headers.get("x-forwarded-for");
+    const ip = forwarded?.split(",")[0] || "unknown";
 
     const allowed = rateLimit(ip, 20, 60000);
 
@@ -72,12 +73,18 @@ export async function POST(req: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const groqStream = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
-            messages,
-            stream: true,
-            max_tokens: 512,
-          });
+          const groqStream = (await Promise.race([
+            groq.chat.completions.create({
+              model: "llama-3.3-70b-versatile",
+              messages,
+              stream: true,
+              max_tokens: 512,
+            }),
+
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error("Groq timeout")), 30000),
+            ),
+          ])) as any;
 
           let fullAnswer = "";
 
@@ -103,7 +110,7 @@ export async function POST(req: NextRequest) {
             await Conversation.create({
               question,
               answer: fullAnswer,
-              confidence: "general",
+              confidence: "none",
               topScore: 0,
               sources: [],
             });
@@ -184,6 +191,7 @@ ${fullAnswer.substring(0, 200)}
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
+        "Access-Control-Allow-Origin": "*",
       },
     });
   } catch (error) {

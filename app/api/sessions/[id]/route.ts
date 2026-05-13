@@ -10,15 +10,31 @@ export async function GET(
 ) {
   try {
     await connectDB();
+
     const { id } = await params;
+
     const session = await Session.findById(id);
+
     if (!session) {
-      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Session not found",
+        },
+        { status: 404 },
+      );
     }
-    return NextResponse.json(session);
+
+    return NextResponse.json({
+      success: true,
+      session,
+    });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch session" },
+      {
+        success: false,
+        error: "Failed to fetch session",
+      },
       { status: 500 },
     );
   }
@@ -38,10 +54,16 @@ export async function PUT(
       { messages, title },
       { new: true },
     );
-    return NextResponse.json(session);
+    return NextResponse.json({
+      success: true,
+      session,
+    });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to update session" },
+      {
+        success: false,
+        error: "Failed to update session",
+      },
       { status: 500 },
     );
   }
@@ -56,10 +78,16 @@ export async function DELETE(
     await connectDB();
     const { id } = await params;
     await Session.findByIdAndDelete(id);
-    return NextResponse.json({ message: "Session deleted" });
+    return NextResponse.json({
+      success: true,
+      message: "Session deleted",
+    });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to delete session" },
+      {
+        success: false,
+        error: "Failed to delete session",
+      },
       { status: 500 },
     );
   }

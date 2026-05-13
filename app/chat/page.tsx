@@ -102,11 +102,20 @@ export default function ChatPage() {
   };
 
   const loadSession = async (sessionId: string) => {
-    const res = await fetch(`/api/sessions/${sessionId}`);
-    const data = await res.json();
-    setMessages(data.session.messages);
-    setCurrentSessionId(sessionId);
-    setStarted(true);
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}`);
+      const data = await res.json();
+
+      console.log("LOAD SESSION:", data);
+
+      if (data.success && data.session) {
+        setMessages(data.session.messages || []);
+        setCurrentSessionId(sessionId);
+        setStarted(true);
+      }
+    } catch (error) {
+      console.error("LOAD SESSION ERROR:", error);
+    }
   };
 
   const deleteSession = async (e: React.MouseEvent, sessionId: string) => {

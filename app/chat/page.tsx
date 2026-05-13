@@ -112,7 +112,11 @@ export default function ChatPage() {
     updatedMessages: Message[],
     sessionId: string | null,
   ) => {
-    const firstUserMsg = updatedMessages.find((m) => m.role === "user");
+    const messagesToSave = updatedMessages.filter(
+      (m) => m.content.trim() !== "",
+    );
+
+    const firstUserMsg = messagesToSave.find((m) => m.role === "user");
     const title = firstUserMsg
       ? firstUserMsg.content.slice(0, 40) +
         (firstUserMsg.content.length > 40 ? "..." : "")
@@ -122,13 +126,13 @@ export default function ChatPage() {
       await fetch(`/api/sessions/${sessionId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedMessages, title }),
+        body: JSON.stringify({ messages: messagesToSave, title }),
       });
     } else {
       const res = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, messages: updatedMessages }),
+        body: JSON.stringify({ title, messages: messagesToSave }),
       });
       const data = await res.json();
       setCurrentSessionId(data._id);
@@ -138,7 +142,6 @@ export default function ChatPage() {
     await fetchSessions();
     return sessionId;
   };
-
   const handleSend = async (
     e: React.FormEvent | null,
     overrideInput?: string,

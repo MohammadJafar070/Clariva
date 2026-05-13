@@ -5,33 +5,15 @@ export interface IEntry extends Document {
   question: string;
   answer: string;
   category: string;
-  embedding: number[];
   createdAt: Date;
   updatedAt: Date;
 }
 
 const EntrySchema = new Schema<IEntry>(
   {
-    question: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    answer: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    category: {
-      type: String,
-      required: true,
-      trim: true,
-      default: "General",
-    },
-    embedding: {
-      type: [Number],
-      default: [],
-    },
+    question: { type: String, required: true, trim: true },
+    answer: { type: String, required: true, trim: true },
+    category: { type: String, required: true, trim: true, default: "General" },
   },
   { timestamps: true },
 );

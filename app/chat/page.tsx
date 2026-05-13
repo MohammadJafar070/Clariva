@@ -79,9 +79,19 @@ export default function ChatPage() {
   }, [messages]);
 
   const fetchSessions = async () => {
-    const res = await fetch("/api/sessions");
-    const data = await res.json();
-    setSessions(data);
+    try {
+      const res = await fetch("/api/sessions");
+      const data = await res.json();
+
+      if (data.success) {
+        setSessions(data.sessions || []);
+      } else {
+        setSessions([]);
+      }
+    } catch (error) {
+      console.error("FETCH SESSIONS ERROR:", error);
+      setSessions([]);
+    }
   };
 
   const startNewChat = () => {
@@ -94,7 +104,7 @@ export default function ChatPage() {
   const loadSession = async (sessionId: string) => {
     const res = await fetch(`/api/sessions/${sessionId}`);
     const data = await res.json();
-    setMessages(data.messages);
+    setMessages(data.session.messages);
     setCurrentSessionId(sessionId);
     setStarted(true);
   };
@@ -139,9 +149,16 @@ export default function ChatPage() {
         body: JSON.stringify({ title, messages: messagesToSave }),
       });
       const data = await res.json();
-      setCurrentSessionId(data._id);
+
+      const newSessionId = data.session?._id;
+
+      if (newSessionId) {
+        setCurrentSessionId(newSessionId);
+      }
+
       await fetchSessions();
-      return data._id;
+
+      return newSessionId;
     }
   };
 

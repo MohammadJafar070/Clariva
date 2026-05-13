@@ -111,10 +111,12 @@ export default function ChatPage() {
   const saveSession = async (
     updatedMessages: Message[],
     sessionId: string | null,
-  ) => {
+  ): Promise<string | null> => {
     const messagesToSave = updatedMessages.filter(
       (m) => m.content.trim() !== "",
     );
+
+    if (messagesToSave.length === 0) return sessionId;
 
     const firstUserMsg = messagesToSave.find((m) => m.role === "user");
     const title = firstUserMsg
@@ -128,6 +130,8 @@ export default function ChatPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: messagesToSave, title }),
       });
+      await fetchSessions();
+      return sessionId;
     } else {
       const res = await fetch("/api/sessions", {
         method: "POST",
@@ -139,9 +143,8 @@ export default function ChatPage() {
       await fetchSessions();
       return data._id;
     }
-    await fetchSessions();
-    return sessionId;
   };
+
   const handleSend = async (
     e: React.FormEvent | null,
     overrideInput?: string,
@@ -167,6 +170,9 @@ export default function ChatPage() {
 
     setMessages(newMessages);
 
+    // Track session ID locally inside this function
+    let activeSessionId = currentSessionId;
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -174,6 +180,7 @@ export default function ChatPage() {
         body: JSON.stringify({ question, history }),
       });
       setLoadingStatus("Generating answer...");
+
       if (res.status === 429) {
         setMessages((prev) => {
           const updated = [...prev];
@@ -249,7 +256,12 @@ export default function ChatPage() {
         }
       }
 
-      await saveSession(finalMessages, currentSessionId);
+      // Save session and update local activeSessionId
+      const savedId = await saveSession(finalMessages, activeSessionId);
+      if (savedId && !activeSessionId) {
+        activeSessionId = savedId as string;
+        setCurrentSessionId(savedId as string);
+      }
     } catch {
       setMessages((prev) => {
         const updated = [...prev];
